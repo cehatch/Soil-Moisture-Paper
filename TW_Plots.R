@@ -22,11 +22,20 @@ MoistureData[which(Distances%in%Raw[,"Distance_(cm)"]),"Comments"]<-as.character
 MoistureData[which(!(is.na(MoistureData[,"Permittivity_(mV)"]))),"Meas_No"]<-1:length(which(!(is.na(MoistureData[,"Permittivity_(mV)"]))))
 MoistureData[,"Distance_(cm)"]<-Distances
  
-# Clean up data frame                
+# Clean up data frame
+# Change NA to blanks in comment column
 MoistureData[which(is.na(MoistureData[,"Comments"])),"Comments"]<-""
+# Change the 70200, 70300, 70400, and 70500 distances to have NA (instead of 0 mV as shown in LM's original raw data)
+BadData<-which(MoistureData[,"Distance_(cm)"]==70200|MoistureData[,"Distance_(cm)"]==70300|MoistureData[,"Distance_(cm)"]==70400|MoistureData[,"Distance_(cm)"]==70500)
+MoistureData[BadData,"Permittivity_(mV)"]<-NA
                 
 # Add a column of Permittivity in (V)
 MoistureData[,"Permittivity_(V)"]<-MoistureData[,"Permittivity_(mV)"]/1000
+
+# Add a column for soil moisture calculated for the raw permittivity data            
+a0<-1.600
+a1<-8.400
+MoistureData[,"All_Soil_Moisture_Calculated_(%)"]<-sapply(MoistureData[,"Permittivity_(V)"], function(x, y, z) ((1+6.175*x+6.303*x^2-73.578*x^3+183.44*x^4-184.78*x^5+68.017*x^6)-y)/z, a0, a1)
 
 # Add linearly interpolated values between probe measurement data for distance up to 8100 cm:
 # Identify which rows have data
@@ -75,3 +84,16 @@ a1<-8.400
 MoistureData[m_Rows,"m_Soil_Moisture_Calculated_(%)"]<-sapply(m_Permittivity, function(x, y, z) ((1+6.175*x+6.303*x^2-73.578*x^3+183.44*x^4-184.78*x^5+68.017*x^6)-y)/z, a0, a1)
 
 
+########################################################### MAKE PLOTS ####################################################################
+
+# Create plot with all measured data 
+plot(MoistureData[,"Distance_(cm)"]/100, MoistureData[,"All_Soil_Moisture_Calculated_(%)"]*100, xlab='Transect Distance (m)', ylab='Soil Moisture (%)', col='blue4', pch=19)
+# Add dashed lines to separate regimes
+lines(rep(777, length(seq(-25,125, 25))), seq(-25,125, 25), lty=5, col='black')
+lines(rep(709, length(seq(-25,125, 25))), seq(-25,125, 25), lty=5, col='black')
+lines(rep(647, length(seq(-25,125, 25))), seq(-25,125, 25), lty=5, col='black')
+lines(rep(46.4, length(seq(-25,125, 25))), seq(-25,125, 25), lty=5, col='black')
+# Add dotted lines to show where ditches are 
+ lines(rep(144, length(seq(-25,125, 25))), seq(-25,125, 25), lty=6, col='blue4', lwd=2)
+
+                                                              
