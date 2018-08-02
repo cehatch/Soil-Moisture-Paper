@@ -28,6 +28,8 @@ MoistureData[which(is.na(MoistureData[,"Comments"])),"Comments"]<-""
 # Change the 70200, 70300, 70400, and 70500 distances to have NA (instead of 0 mV as shown in LM's original raw data)
 BadData<-which(MoistureData[,"Distance_(cm)"]==70200|MoistureData[,"Distance_(cm)"]==70300|MoistureData[,"Distance_(cm)"]==70400|MoistureData[,"Distance_(cm)"]==70500)
 MoistureData[BadData,"Permittivity_(mV)"]<-NA
+# Change the 64900 distance to have 100% soil moisture (1127.3  mV)
+MoistureData[which(MoistureData[,"Distance_(cm)"]==64900),"Permittivity_(mV)"]<-1127.3
                 
 # Add a column of Permittivity in (V)
 MoistureData[,"Permittivity_(V)"]<-MoistureData[,"Permittivity_(mV)"]/1000
@@ -86,14 +88,35 @@ MoistureData[m_Rows,"m_Soil_Moisture_Calculated_(%)"]<-sapply(m_Permittivity, fu
 
 ########################################################### MAKE PLOTS ####################################################################
 
+# Set working directory to save plots to 
+setwd('C:/Users/erikai94/Documents/UMass/Tidmarsh/R_Plots')
+
 # Create plot with all measured data 
-plot(MoistureData[,"Distance_(cm)"]/100, MoistureData[,"All_Soil_Moisture_Calculated_(%)"]*100, xlab='Transect Distance (m)', ylab='Soil Moisture (%)', col='blue4', pch=19)
+pdf("Distance_Moisture_DTS_Transect.pdf", width=12, height=7)
+plot(MoistureData[,"Distance_(cm)"]/100, MoistureData[,"All_Soil_Moisture_Calculated_(%)"]*100, main='Probe Soil Moisture Transect Along DTS Cable', xlab='Transect Distance (m)', ylab='Soil Moisture (%)', col='blue4', pch=19, ylim=c(0,120))
 # Add dashed lines to separate regimes
-lines(rep(777, length(seq(-25,125, 25))), seq(-25,125, 25), lty=5, col='black')
-lines(rep(709, length(seq(-25,125, 25))), seq(-25,125, 25), lty=5, col='black')
-lines(rep(647, length(seq(-25,125, 25))), seq(-25,125, 25), lty=5, col='black')
-lines(rep(46.4, length(seq(-25,125, 25))), seq(-25,125, 25), lty=5, col='black')
+lines(rep(777, length(seq(-25,150, 25))), seq(-25,150, 25), lty=5, col='black')
+lines(rep(709, length(seq(-25,150, 25))), seq(-25,150, 25), lty=5, col='black')
+lines(rep(647, length(seq(-25,150, 25))), seq(-25,150, 25), lty=5, col='black')
+lines(rep(46.4, length(seq(-25,150, 25))), seq(-25,150, 25), lty=5, col='black')
 # Add dotted lines to show where ditches are 
- lines(rep(144, length(seq(-25,125, 25))), seq(-25,125, 25), lty=6, col='blue4', lwd=2)
+lines(rep(46.4, length(seq(-25,150, 25))), seq(-25,150, 25), lty=6, col='blue4', lwd=2)
+lines(rep(144, length(seq(-25,150, 25))), seq(-25,150, 25), lty=6, col='blue4', lwd=3)
+lines(rep(156.5, length(seq(-25,150, 25))), seq(-25,150, 25), lty=6, col='blue4', lwd=2)
+lines(rep(323.5, length(seq(-25,150, 25))), seq(-25,150, 25), lty=6, col='blue4', lwd=2)
+lines(rep(370, length(seq(-25,150, 25))), seq(-25,150, 25), lty=6, col='blue4', lwd=2)
+lines(rep(471, length(seq(-25,150, 25))), seq(-25,150, 25), lty=6, col='blue4', lwd=2)
+lines(rep(548.25, length(seq(-25,150, 25))), seq(-25,150, 25), lty=6, col='blue4', lwd=2)
+lines(rep(594.5, length(seq(-25,150, 25))), seq(-25,150, 25), lty=6, col='blue4', lwd=2)
+lines(rep(649, length(seq(-25,150, 25))), seq(-25,150, 25), lty=6, col='blue4', lwd=2)
+# Add dotted line to show where the duckweed spring is
+lines(rep(72.9, length(seq(-25,150, 25))), seq(-25,150, 25), lty=6, col='green', lwd=2)
+# Add legend
+legend(680,123, c("Regime Boundary", "Ditch", "Main Channel", "Spring"), col=c("black","blue4", "blue4", "green"), lty=c(5,6,6), lwd=c(2.5,2.5,3.5,2.5)) 
+# Add x axis ticks
+axis(side = 1, at = c(100,300,500,700))
+dev.off()                                                           
+
+
 
                                                               
