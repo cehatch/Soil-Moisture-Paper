@@ -1,12 +1,17 @@
 ######################################################## LOAD LIBRARIES ##################################################################
+###########################################################################################################################################
 
+###########################################################################################################################################
 ########################################################### LOAD DATA ####################################################################
+###########################################################################################################################################
 
 Raw<-read.csv("file:///C:/Users/erikai94/Documents/UMass/Tidmarsh/McInnis_SM_TW_Raw.csv")    
 # Assign column names
 colnames(Raw)<-c("Meas_No", "Distance_(cm)", "Permittivity_(mV)", "Probe_Soil_Moisture_(%)", "Comments")      
 
+###########################################################################################################################################
 ########################################################### UPDATE MATRIX ####################################################################
+###########################################################################################################################################
 
 # Update the data frame so here are rows for every distance of 10 cm              
 # First, make a sequence from 0 to the maximum distance in raw data, by increments of 10
@@ -29,7 +34,16 @@ MoistureData[which(is.na(MoistureData[,"Comments"])),"Comments"]<-""
 BadData<-which(MoistureData[,"Distance_(cm)"]==70200|MoistureData[,"Distance_(cm)"]==70300|MoistureData[,"Distance_(cm)"]==70400|MoistureData[,"Distance_(cm)"]==70500)
 MoistureData[BadData,"Permittivity_(mV)"]<-NA
 # Change the 64900 distance to have 100% soil moisture (1127.3  mV)
+MoistureData[which(MoistureData[,"Distance_(cm)"]==5800),"Permittivity_(mV)"]<-1127.3
 MoistureData[which(MoistureData[,"Distance_(cm)"]==64900),"Permittivity_(mV)"]<-1127.3
+
+# Add benchmarking notes to comments column
+MoistureData[which(MoistureData[,"Distance_(cm)"]==58*100),"Comments"]<-"Ditch"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==709*100),"Comments"]<-"Enter Woods"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==777*100),"Comments"]<-"Exit Woods"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==46.4*100),"Comments"]<-"Enter Bog W"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==143*100),"Comments"]<-"Exit Bog W"
+
                 
 # Add a column of Permittivity in (V)
 MoistureData[,"Permittivity_(V)"]<-MoistureData[,"Permittivity_(mV)"]/1000
@@ -85,13 +99,15 @@ a0<-1.600
 a1<-8.400
 MoistureData[m_Rows,"m_Soil_Moisture_Calculated_(%)"]<-sapply(m_Permittivity, function(x, y, z) ((1+6.175*x+6.303*x^2-73.578*x^3+183.44*x^4-184.78*x^5+68.017*x^6)-y)/z, a0, a1)
 
-
+###########################################################################################################################################
 ########################################################### MAKE PLOTS ####################################################################
-
+###########################################################################################################################################
 # Set working directory to save plots to 
 setwd('C:/Users/erikai94/Documents/UMass/Tidmarsh/R_Plots')
 
-# Create plot with all measured data 
+                                                              
+########################################################### CREATE A PLOT WITH ALL MEASURED PROBE DATA ###########################################################
+#(DISTANCE VS MOISTURE) FROM LUKE MCINNIS
 pdf("Distance_Moisture_DTS_Transect.pdf", width=12, height=7)
 plot(MoistureData[,"Distance_(cm)"]/100, MoistureData[,"All_Soil_Moisture_Calculated_(%)"]*100, main='Probe Soil Moisture Transect Along DTS Cable', xlab='Transect Distance (m)', ylab='Soil Moisture (%)', col='blue4', pch=19, ylim=c(0,120))
 # Add dashed lines to separate regimes
@@ -116,6 +132,63 @@ legend(680,123, c("Regime Boundary", "Ditch", "Main Channel", "Spring"), col=c("
 # Add x axis ticks
 axis(side = 1, at = c(100,300,500,700))
 dev.off()                                                           
+                                                          
+########################################################### CREATE AUTOCORRELATION PLOTS ###########################################################
+
+# First create an autocorrelation plot for the ENTIRE TRANSECT at the METER SCALE
+                                                              
+ # Write a function to get the autocovariance for lags 0-20
+autoCov<-function(lag, MoistureData) {
+    # Calculate average soil moisture
+    SM_mean<-mean(MoistureData)
+    # Record number of soil moisture measurements
+    n<-length(MoistureData)
+    # Make empty vector for autocovariance check
+    AutoCov<-vector(length=length(MoistureData)-1)                    
+    for (i in (lag+1):n){
+    AutoCov[i]<-(1/n*(MoistureData[i]-SM_mean)*(MoistureData[i-lag]-SM_mean))
+    }
+    # Calculate the autocovariance for each lag
+    return(sum(AutoCov))
+    }                                                                                                                   
+
+# Start with the WOODS at the METER SCALE
+# Extract only the moisture data from the woods at the meter scale
+Woods_m<-MoistureData[which(MoistureData[,"Comments"]=="Enter Woods"):which(MoistureData[,"Comments"]=="Exit Woods"),"m_Soil_Moisture_Calculated_(%)"]                                                              
+# Remove NAs from the vector of moisture values
+Woods_m<-na.omit(Woods_m)                                                             
+# Apply the autoCov function to the Woods_m vector                                                            
+Woods_m_AC<-sapply(0:20, function(x,y) autoCov(x,y), Woods_m)    
+# Calcualte the autocorrelation coefficients    
+Woods_m_AC<-sapply(Woods_m_AC, function(x) x/Woods_m_AC[1])
+# Calculate the 95% confidence bounds for the plot               
+conf<-1.96/sqrt(length(Woods_m))
+# Create an autocorrelation plot 
+pdf("TW_Woods_AC_m.pdf", width=12, height=7)
+plot(c(0:20), Woods_m_AC, abline(h=c(conf,-conf), lty=3), ylim=c(-1,1), main="TW Woods Autocorrelation (meter scale)", xlab='Lag', ylab='Autocorrelation',  xaxp  = c(0, 20, 20), pch=20)    
+legend(680,123, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(2.5)) 
+dev.off()     
+
+# Plot the WEST BOG regime at the METER SCALE
+# Make sure there are no gaps in the data
+anyNA(MoistureData[which(MoistureData[,"Distance_(cm)"]%in%seq(ceiling(46.4)*100, 143*100, 100)),"m_Soil_Moisture_Calculated_(%)"])
+# FALSE! 
+# Extract only the moisture data from the woods at the meter scale
+BogW_m<-MoistureData[which(MoistureData[,"Comments"]=="Enter Bog W"):which(MoistureData[,"Comments"]=="Exit Bog W"),"m_Soil_Moisture_Calculated_(%)"]                                                              
+# Remove NAs from the vector of moisture values
+BogW_m<-na.omit(BogW_m)                                                             
+# Apply the autoCov function to the Woods_m vector                                                            
+BogW_m_AC<-sapply(0:20, function(x,y) autoCov(x,y), BogW_m)    
+# Calcualte the autocorrelation coefficients    
+BogW_m_AC<-sapply(BogW_m_AC, function(x) x/BogW_m_AC[1])
+# Calculate the 95% confidence bounds for the plot               
+conf<-1.96/sqrt(length(BogW_m))
+# Create an autocorrelation plot 
+pdf("TW_BogW_AC_m.pdf", width=12, height=7)
+plot(c(0:20), BogW_m_AC, abline(h=c(conf,-conf), lty=3), ylim=c(-1,1), main="TW West Bog Autocorrelation (meter scale)", xlab='Lag', ylab='Autocorrelation',  xaxp  = c(0, 20, 20), pch=20)    
+legend(680,123, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(2.5)) 
+dev.off()                  
+                                                              
 
 
 
