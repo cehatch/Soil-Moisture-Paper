@@ -38,13 +38,18 @@ MoistureData[which(MoistureData[,"Distance_(cm)"]==5800),"Permittivity_(mV)"]<-1
 MoistureData[which(MoistureData[,"Distance_(cm)"]==64900),"Permittivity_(mV)"]<-1127.3
 
 # Add benchmarking notes to comments column
+MoistureData[which(MoistureData[,"Distance_(cm)"]==0*100),"Enter"]<-"Dry W"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==42*100),"Exit"]<-"Dry W"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==0*100),"Enter"]<-"Dry M"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==42*100),"Exit"]<-"Dry M"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==46.4*100),"Enter"]<-"Bog W"
 MoistureData[which(MoistureData[,"Distance_(cm)"]==58*100),"Comments"]<-"Ditch"
-MoistureData[which(MoistureData[,"Distance_(cm)"]==709*100),"Comments"]<-"Enter Woods"
-MoistureData[which(MoistureData[,"Distance_(cm)"]==777*100),"Comments"]<-"Exit Woods"
-MoistureData[which(MoistureData[,"Distance_(cm)"]==46.4*100),"Comments"]<-"Enter Bog W"
-MoistureData[which(MoistureData[,"Distance_(cm)"]==143*100),"Comments"]<-"Exit Bog W"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==143*100),"Exit"]<-"Bog W"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==145*100),"Enter"]<-"Bog E"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==647*100),"Exit"]<-"Bog E"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==709*100),"Enter"]<-"Woods"
+MoistureData[which(MoistureData[,"Distance_(cm)"]==777*100),"Exit"]<-"Woods"
 
-                
 # Add a column of Permittivity in (V)
 MoistureData[,"Permittivity_(V)"]<-MoistureData[,"Permittivity_(mV)"]/1000
 
@@ -154,7 +159,7 @@ autoCov<-function(lag, MoistureData) {
 
 # Start with the WOODS at the METER SCALE
 # Extract only the moisture data from the woods at the meter scale
-Woods_m<-MoistureData[which(MoistureData[,"Comments"]=="Enter Woods"):which(MoistureData[,"Comments"]=="Exit Woods"),"m_Soil_Moisture_Calculated_(%)"]                                                              
+Woods_m<-MoistureData[which(MoistureData[,"Enter"]=="Woods"):which(MoistureData[,"Exit"]=="Woods"),"m_Soil_Moisture_Calculated_(%)"]                                                              
 # Remove NAs from the vector of moisture values
 Woods_m<-na.omit(Woods_m)                                                             
 # Apply the autoCov function to the Woods_m vector                                                            
@@ -166,7 +171,7 @@ conf<-1.96/sqrt(length(Woods_m))
 # Create an autocorrelation plot 
 pdf("TW_Woods_AC_m.pdf", width=12, height=7)
 plot(c(0:20), Woods_m_AC, abline(h=c(conf,-conf), lty=3), ylim=c(-1,1), main="TW Woods Autocorrelation (meter scale)", xlab='Lag', ylab='Autocorrelation',  xaxp  = c(0, 20, 20), pch=20)    
-legend(680,123, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(2.5)) 
+legend(15.5,1, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(2.5)) 
 dev.off()     
 
 # Plot the WEST BOG regime at the METER SCALE
@@ -174,10 +179,10 @@ dev.off()
 anyNA(MoistureData[which(MoistureData[,"Distance_(cm)"]%in%seq(ceiling(46.4)*100, 143*100, 100)),"m_Soil_Moisture_Calculated_(%)"])
 # FALSE! 
 # Extract only the moisture data from the woods at the meter scale
-BogW_m<-MoistureData[which(MoistureData[,"Comments"]=="Enter Bog W"):which(MoistureData[,"Comments"]=="Exit Bog W"),"m_Soil_Moisture_Calculated_(%)"]                                                              
+BogW_m<-MoistureData[which(MoistureData[,"Enter"]=="Bog W"):which(MoistureData[,"Exit"]=="Bog W"),"m_Soil_Moisture_Calculated_(%)"]                                                              
 # Remove NAs from the vector of moisture values
 BogW_m<-na.omit(BogW_m)                                                             
-# Apply the autoCov function to the Woods_m vector                                                            
+# Apply the autoCov function to the BogW_m vector                                                            
 BogW_m_AC<-sapply(0:20, function(x,y) autoCov(x,y), BogW_m)    
 # Calcualte the autocorrelation coefficients    
 BogW_m_AC<-sapply(BogW_m_AC, function(x) x/BogW_m_AC[1])
@@ -186,9 +191,49 @@ conf<-1.96/sqrt(length(BogW_m))
 # Create an autocorrelation plot 
 pdf("TW_BogW_AC_m.pdf", width=12, height=7)
 plot(c(0:20), BogW_m_AC, abline(h=c(conf,-conf), lty=3), ylim=c(-1,1), main="TW West Bog Autocorrelation (meter scale)", xlab='Lag', ylab='Autocorrelation',  xaxp  = c(0, 20, 20), pch=20)    
-legend(680,123, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(2.5)) 
+legend(15.5,1, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(2.5)) 
 dev.off()                  
                                                               
+# Plot the EAST BOG regime at the METER SCALE
+# Make sure there are no gaps in the data
+anyNA(MoistureData[which(MoistureData[,"Distance_(cm)"]%in%seq(145*100, 647*100, 100)),"m_Soil_Moisture_Calculated_(%)"])
+# FALSE! 
+# Extract only the moisture data from the woods at the meter scale
+BogE_m<-MoistureData[which(MoistureData[,"Enter"]=="Bog E"):which(MoistureData[,"Exit"]=="Bog E"),"m_Soil_Moisture_Calculated_(%)"]                                                              
+# Remove NAs from the vector of moisture values
+BogE_m<-na.omit(BogE_m)                                                             
+# Apply the autoCov function to the BogE_m vector                                                            
+BogE_m_AC<-sapply(0:20, function(x,y) autoCov(x,y), BogE_m)    
+# Calcualte the autocorrelation coefficients    
+BogE_m_AC<-sapply(BogE_m_AC, function(x) x/BogE_m_AC[1])
+# Calculate the 95% confidence bounds for the plot               
+conf<-1.96/sqrt(length(BogE_m))
+# Create an autocorrelation plot 
+pdf("TW_BogE_AC_m.pdf", width=12, height=7)
+plot(c(0:20), BogE_m_AC, abline(h=c(conf,-conf), lty=3), ylim=c(-1,1), main="TW East Bog Autocorrelation (meter scale)", xlab='Lag', ylab='Autocorrelation',  xaxp  = c(0, 20, 20), pch=20)    
+legend(15.5,1, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(2.5)) 
+dev.off()          
+
+# Plot the WEST DRY regime at the METER SCALE
+# This is the dry area where the DTS plow install began
+# Make sure there are no gaps in the data
+anyNA(MoistureData[which(MoistureData[,"Distance_(cm)"]%in%seq(0*100, 42*100, 100)),"m_Soil_Moisture_Calculated_(%)"])
+# FALSE! 
+# Extract only the moisture data from the woods at the meter scale
+BogE_m<-MoistureData[which(MoistureData[,"Enter"]=="Bog E"):which(MoistureData[,"Exit"]=="Bog E"),"m_Soil_Moisture_Calculated_(%)"]                                                              
+# Remove NAs from the vector of moisture values
+BogE_m<-na.omit(BogE_m)                                                             
+# Apply the autoCov function to the BogE_m vector                                                            
+BogE_m_AC<-sapply(0:20, function(x,y) autoCov(x,y), BogE_m)    
+# Calcualte the autocorrelation coefficients    
+BogE_m_AC<-sapply(BogE_m_AC, function(x) x/BogE_m_AC[1])
+# Calculate the 95% confidence bounds for the plot               
+conf<-1.96/sqrt(length(BogE_m))
+# Create an autocorrelation plot 
+pdf("TW_BogE_AC_m.pdf", width=12, height=7)
+plot(c(0:20), BogE_m_AC, abline(h=c(conf,-conf), lty=3), ylim=c(-1,1), main="TW East Bog Autocorrelation (meter scale)", xlab='Lag', ylab='Autocorrelation',  xaxp  = c(0, 20, 20), pch=20)    
+legend(15.5,1, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(2.5)) 
+dev.off()          
 
 
 
