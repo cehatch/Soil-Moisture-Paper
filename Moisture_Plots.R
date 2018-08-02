@@ -5,13 +5,22 @@
 ########################################################### LOAD DATA ####################################################################
 ###########################################################################################################################################
 
+# Load Tidmarsh West data
 Raw<-read.csv("file:///C:/Users/erikai94/Documents/UMass/Tidmarsh/McInnis_SM_TW_Raw.csv")    
+# Load Tidmarsh East data
+TE_Moisture<-read.csv("file:///C:/Users/erikai94/Documents/UMass/Tidmarsh/Tidmarsh_East_Transects_GSM.csv")    
 # Assign column names
 colnames(Raw)<-c("Meas_No", "Distance_(cm)", "Permittivity_(mV)", "Probe_Soil_Moisture_(%)", "Comments")      
+colnames(TE_Moisture)<-c("DateTime_A" ,"Distance_A", "Probe_A", "AWC", "DateTime_H", "Distance_H", "Probe_H","Hummock", "DateTime_U" , "Distance_U", "Probe_U", "Undisturbed")
 
 ###########################################################################################################################################
 ########################################################### UPDATE MATRIX ####################################################################
 ###########################################################################################################################################
+
+# Convert from percentage to a numerical data in the TE data
+TE_Moisture[,"AWC"]<-as.numeric(sub("%", "", TE_Moisture[,"AWC"]))
+TE_Moisture[,"Hummock"]<-as.numeric(sub("%", "", TE_Moisture[,"Hummock"]))
+TE_Moisture[,"Undisturbed"]<-as.numeric(sub("%", "", TE_Moisture[,"Undisturbed"]))
 
 # Update the data frame so here are rows for every distance of 10 cm              
 # First, make a sequence from 0 to the maximum distance in raw data, by increments of 10
@@ -238,7 +247,7 @@ legend(15.5,1, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(1))
 dev.off()          
 
 # Plot the MIDDLE DRY regime at the METER SCALE
-# This is the dry area betweeb the woods and the start of the bog
+# This is the dry area between the woods and the start of the bog
 # Make sure there are no gaps in the data
 anyNA(MoistureData[which(MoistureData[,"Distance_(cm)"]%in%seq(650*100, 701*100, 100)),"m_Soil_Moisture_Calculated_(%)"])
 # FALSE! 
@@ -258,5 +267,55 @@ plot(c(0:20), DryM_m_AC, abline(h=c(conf,-conf), lty=3), ylim=c(-1,1), main="TW 
 legend(15.5,1, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(1)) 
 dev.off()  
 
+# Plot the TIDMARSH EAST AWC moisture values
+# Extract only the moisture data from the Atlantic White Cedar transect at the 20 cm scale
+AWC_20cm<-TE_Moisture[,"AWC"]                                                             
+# Remove NAs from the vector of moisture values
+AWC_20cm<-na.omit(AWC_20cm)                                                             
+# Apply the autoCov function to the AWC_m vector                                                            
+AWC_20cm_AC<-sapply(0:20, function(x,y) autoCov(x,y), AWC_20cm)    
+# Calcualte the autocorrelation coefficients    
+AWC_20cm_AC<-sapply(AWC_20cm_AC, function(x) x/AWC_20cm_AC[1])
+# Calculate the 95% confidence bounds for the plot               
+conf<-1.96/sqrt(length(AWC_20cm))
+# Create an autocorrelation plot 
+pdf("TE_AWC_20cm_AC.pdf", width=12, height=7)
+plot(c(0:20), AWC_20cm_AC, abline(h=c(conf,-conf), lty=3), ylim=c(-1,1), main="TE Atlantic White Cedar Autocorrelation (20 cm scale)", xlab='Lag', ylab='Autocorrelation',  xaxp  = c(0, 20, 20), pch=20)    
+legend(15.5,1, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(1)) 
+dev.off()  
 
+# Plot the TIDMARSH EAST HUMMOCK moisture values
+# Extract only the moisture data from the hummock transect at the 10 cm scale
+Hummock_10cm<-TE_Moisture[,"Hummock"]                                                             
+# Remove NAs from the vector of moisture values
+Hummock_10cm<-na.omit(Hummock_10cm)                                                             
+# Apply the autoCov function to the Hummock_m vector                                                            
+Hummock_10cm_AC<-sapply(0:20, function(x,y) autoCov(x,y), Hummock_10cm)    
+# Calcualte the autocorrelation coefficients    
+Hummock_10cm_AC<-sapply(Hummock_10cm_AC, function(x) x/Hummock_10cm_AC[1])
+# Calculate the 95% confidence bounds for the plot               
+conf<-1.96/sqrt(length(Hummock_10cm))
+# Create an autocorrelation plot 
+pdf("TE_Hummock_10cm_AC.pdf", width=12, height=7)
+plot(c(0:20), Hummock_10cm_AC, abline(h=c(conf,-conf), lty=3), ylim=c(-1,1), main="TE Hummock Autocorrelation (10 cm scale)", xlab='Lag', ylab='Autocorrelation',  xaxp  = c(0, 20, 20), pch=20)    
+legend(15.5,1, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(1)) 
+dev.off()  
+
+# Plot the TIDMARSH EAST UNDISTURBED moisture values
+# Extract only the moisture data from the undisturbed transect at the 20 cm scale
+Undisturbed_20cm<-TE_Moisture[,"Undisturbed"]                                                             
+# Remove NAs from the vector of moisture values
+Undisturbed_20cm<-na.omit(Undisturbed_20cm)                                                             
+# Apply the autoCov function to the Hummock_m vector                                                            
+Undisturbed_20cm_AC<-sapply(0:20, function(x,y) autoCov(x,y), Undisturbed_20cm)    
+# Calcualte the autocorrelation coefficients    
+Undisturbed_20cm_AC<-sapply(Undisturbed_20cm_AC, function(x) x/Undisturbed_20cm_AC[1])
+# Calculate the 95% confidence bounds for the plot               
+conf<-1.96/sqrt(length(Undisturbed_20cm))
+# Create an autocorrelation plot 
+pdf("TE_Undisturbed_20cm_AC.pdf", width=12, height=7)
+plot(c(0:20), Undisturbed_20cm_AC, abline(h=c(conf,-conf), lty=3), ylim=c(-1,1), main="TE Undisturbed Autocorrelation (20 cm scale)", xlab='Lag', ylab='Autocorrelation',  xaxp  = c(0, 20, 20), pch=20)    
+legend(15.5,1, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(1)) 
+dev.off()  
+                  
                                                               
