@@ -285,19 +285,25 @@ legend(15.5,1, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(1))
 dev.off()  
 
 # Plot the TIDMARSH EAST HUMMOCK moisture values
-# Extract only the moisture data from the hummock transect at the 10 cm scale
-Hummock_10cm<-TE_Moisture[,"Hummock"]                                                             
+# Extract only the moisture data from the hummock transect at the 20 cm scale
+# NOTE: the distances for the hummock data transitions from every 10 cm to every 20 cm ... must account for this
+# Determine the maximum and minimum distances value in the hummock data 
+max_H<-max(na.omit(TE_Moisture[,"Distance_H"]))
+# min_H starts at 10. We would rather start at 20 cm (+10)
+min_H<-min(na.omit(TE_Moisture[,"Distance_H"]))+10
+# Create a sequence from min_H to max_H separated by increments of 20 and only select values from hummock data that match those distances
+Hummock_20cm<-TE_Moisture[TE_Moisture[,"Distance_H"]%in%seq(min_H, max_H, 20), "Hummock"]             
 # Remove NAs from the vector of moisture values
-Hummock_10cm<-na.omit(Hummock_10cm)                                                             
+Hummock_20cm<-na.omit(Hummock_20cm)                                                             
 # Apply the autoCov function to the Hummock_m vector                                                            
-Hummock_10cm_AC<-sapply(0:20, function(x,y) autoCov(x,y), Hummock_10cm)    
+Hummock_20cm_AC<-sapply(0:20, function(x,y) autoCov(x,y), Hummock_20cm)    
 # Calcualte the autocorrelation coefficients    
-Hummock_10cm_AC<-sapply(Hummock_10cm_AC, function(x) x/Hummock_10cm_AC[1])
+Hummock_20cm_AC<-sapply(Hummock_20cm_AC, function(x) x/Hummock_20cm_AC[1])
 # Calculate the 95% confidence bounds for the plot               
-conf<-1.96/sqrt(length(Hummock_10cm))
+conf<-1.96/sqrt(length(Hummock_20cm))
 # Create an autocorrelation plot 
-pdf("TE_Hummock_10cm_AC.pdf", width=12, height=7)
-plot(c(0:20), Hummock_10cm_AC, abline(h=c(conf,-conf), lty=3), ylim=c(-1,1), main="TE Hummock Autocorrelation (10 cm scale)", xlab='Lag', ylab='Autocorrelation',  xaxp  = c(0, 20, 20), pch=20)    
+pdf("TE_Hummock_20cm_AC.pdf", width=12, height=7)
+plot(c(0:20), Hummock_20cm_AC, abline(h=c(conf,-conf), lty=3), ylim=c(-1,1), main="TE Hummock Autocorrelation (20 cm scale)", xlab='Lag', ylab='Autocorrelation',  xaxp  = c(0, 20, 20), pch=20)    
 legend(15.5,1, "95% Confidence Bands", col=c("black"), lty=3, lwd=c(1)) 
 dev.off()  
 
